@@ -6,9 +6,9 @@ from pathlib import Path
 
 # CÂMERA E ROI: copie as coordenadas produzidas por calibracao/calibrar_roi.py
 ROI = (420, 0, 1500, 1080)  # Provisória: recorte quadrado central da câmera 1920 × 1080
-URL_CAMERA = "rtsp://admin:senai2026@192.168.3.13:554/onvif1"
-TRANSPORTE_RTSP = "udp"  # A câmera Yoosee de teste foi validada com UDP
-INTERVALO_CAMERA = 0.03  # Atualização mais frequente que os 15 quadros/s da câmera
+URL_CAMERA = "rtsp://admin:senai2026@192.168.3.216:554/cam/realmonitor?channel=1&subtype=0"
+TRANSPORTE_RTSP = "tcp"  # Transporte validado com a Intelbras iME 500 Full Color
+INTERVALO_CAMERA = 0.03  # Intervalo de atualização da interface, em segundos
 
 # OPERAÇÃO: escolha a origem da imagem e habilite o envio real, se necessário
 USAR_VIDEO = False  # True: arquivo de vídeo; False: câmera
@@ -40,7 +40,7 @@ if ROI is None:
 estado = st.session_state
 origem = "Vídeo" if USAR_VIDEO else "Câmera"
 destino = "Node-RED" if ENVIAR_NODE_RED and not USAR_VIDEO else "Simulação"
-configuracao = (USAR_VIDEO, ENVIAR_NODE_RED, URL_CAMERA)
+configuracao = (USAR_VIDEO, ENVIAR_NODE_RED, URL_CAMERA, TRANSPORTE_RTSP)
 if estado.get("configuracao") != configuracao:
     # Também inicializa a primeira sessão, quando ainda não existe captura
     if estado.get("captura") is not None:

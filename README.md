@@ -29,7 +29,7 @@ Copie os pesos treinados para `best.pt`, na raiz. A captura e a calibração fun
 No início de `app.py`:
 
 - `URL_CAMERA`: endereço RTSP completo da câmera.
-- `TRANSPORTE_RTSP`: transporte da conexão; o teste atual usa `udp`.
+- `TRANSPORTE_RTSP`: transporte da conexão; a Intelbras iME 500 Full Color usa `tcp` nesta aplicação.
 - `ROI`: `(esquerda, topo, direita, base)`, em pixels da imagem original.
 - `INTERVALO_CAMERA`: intervalo de atualização da interface, em segundos.
 - `USAR_VIDEO` e `ENVIAR_NODE_RED`: situação de operação, sem seletor na interface.
