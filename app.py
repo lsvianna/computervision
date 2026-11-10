@@ -11,7 +11,7 @@ from time import monotonic
 
 # CÂMERA E ROI: copie as coordenadas produzidas por calibracao/calibrar_roi.py
 ROI = (420, 0, 1500, 1080)  # Recorte quadrado central da câmera 1920 × 1080
-URL_CAMERA = "rtsp://admin:senai2026@192.168.3.216:554/cam/realmonitor?channel=1&subtype=0"
+URL_CAMERA = "rtsp://admin:senai2026@10.26.92.144:554/cam/realmonitor?channel=1&subtype=0"
 TRANSPORTE_RTSP = "tcp"  # Transporte validado com a Intelbras iME 500 Full Color
 INTERVALO_CAMERA = 0.1  # Intervalo da detecção de presença, em segundos
 
