@@ -388,19 +388,19 @@ def consultar_estado():
 def executar_acao(nome):
     """Atende aos botões, usando cópias do recorte na resolução original."""
     if not request.is_json:
-        return jsonify(mensagem="Envie a ação pela interface do aplicativo."), 400
+        return jsonify(mensagem="Envie a ação pela interface do aplicativo!"), 400
     with controle:
         try:
             fonte = estado["fonte"]
             if nome == "acessar":
                 if fonte is not None:
-                    raise ValueError("Use Parar antes de acessar outra fonte.")
+                    raise ValueError("Use Parar antes de acessar outra fonte!")
                 endereco = URL_CAMERA
                 if USAR_VIDEO:
                     arquivo = str((request.get_json(silent=True) or {}).get("arquivo", "")).strip()
                     endereco = str(PASTA / arquivo)
                     if not arquivo or not Path(endereco).is_file():
-                        raise ValueError("Arquivo de vídeo não encontrado. Confira o caminho.")
+                        raise ValueError("Arquivo de vídeo não encontrado! Confira o caminho.")
                 estado["fonte"] = Fonte(endereco)
                 estado.update(fundo=None, ocupada=False, resultado=None, comando=None,
                               mensagem="", conexao=estado["conexao"] + 1,
@@ -411,13 +411,13 @@ def executar_acao(nome):
                 estado.update(fonte=None, fundo=None, ocupada=False, resultado=None,
                               comando=None, mensagem="", ocupado=False, pendente=None)
             elif fonte is None or fonte.encerrar.is_set():
-                raise ValueError("Acesse uma fonte antes de continuar.")
+                raise ValueError("Acesse uma fonte antes de continuar!")
             elif nome == "calibrar":
                 estado.update(fundo=fonte.imagem(), ocupada=False,
                               mensagem="Fundo vazio calibrado!", ocupado=False, pendente=None)
             elif nome == "classificar":
                 if estado["ocupado"]:
-                    raise ValueError("Aguarde a classificação atual.")
+                    raise ValueError("Aguarde a classificação atual!")
                 recorte = fonte.imagem()
                 if estado["fundo"] is not None:
                     estado["ocupada"] = detectar(recorte, estado["fundo"])
@@ -429,12 +429,12 @@ def executar_acao(nome):
                 else:
                     fonte.pausa.set()
             else:
-                raise ValueError("Ação indisponível.")
+                raise ValueError("Ação indisponível!")
             return jsonify(ok=True)
         except ValueError as erro:
             estado["mensagem"] = str(erro)
         except (cv2.error, OSError):
-            estado["mensagem"] = "Não foi possível acessar a fonte. Confira a configuração."
+            estado["mensagem"] = "Não foi possível acessar a fonte! Confira a configuração."
         return jsonify(mensagem=estado["mensagem"]), 400
 
 
