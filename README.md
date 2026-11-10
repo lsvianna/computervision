@@ -7,6 +7,7 @@ Câmera ou vídeo → recorte da ROI → presença com OpenCV → classificaçã
 | Arquivo | Responsabilidade |
 |---|---|
 | `app.py` | Interface Streamlit, captura e sequência da inspeção. |
+| `camera.py` | Captura contínua, último quadro disponível e fluxo MJPEG local da câmera. |
 | `transformacao.py` | `transformar(imagem, roi)`: recorta a região de inspeção. |
 | `inspecao.py` | `detectar()`, `classificar()` e `enviar()`, com suas configurações. |
 | `camera_teste.py` | Teste independente da câmera completa no navegador. |
@@ -31,7 +32,7 @@ No início de `app.py`:
 - `URL_CAMERA`: endereço RTSP completo da câmera.
 - `TRANSPORTE_RTSP`: transporte da conexão; a Intelbras iME 500 Full Color usa `tcp` nesta aplicação.
 - `ROI`: `(esquerda, topo, direita, base)`, em pixels da imagem original.
-- `INTERVALO_CAMERA`: intervalo de atualização da interface, em segundos.
+- `INTERVALO_CAMERA`: intervalo da detecção de presença, em segundos; o player é independente.
 - `USAR_VIDEO` e `ENVIAR_NODE_RED`: situação de operação, sem seletor na interface.
 
 | Situação | `USAR_VIDEO` | `ENVIAR_NODE_RED` |
@@ -61,6 +62,10 @@ No início de `inspecao.py`, as configurações estão agrupadas por ação:
 **Classificar Agora** analisa o quadro atual mesmo sem calibrar o fundo. Não há repetição automática de comandos após falhas.
 
 A interface mostra somente o recorte. A prévia reduzida não altera a resolução usada na inspeção. **Região vazia / Peça presente** aparece acima da imagem; a orientação para calibrar aparece abaixo dela.
+
+Com a câmera, `camera.py` lê continuamente e guarda apenas o quadro mais recente. O navegador recebe o recorte por um fluxo contínuo MJPEG via HTTP, sem esperar pelo YOLO. **Calibrar Fundo** copia um quadro como referência; **Classificar Agora** utiliza um quadro recente. Na classificação automática, o modelo recebe o mesmo recorte que indicou a chegada da peça. Os três caminhos usam a resolução original, antes da redução da prévia.
+
+Abra pelo endereço `http://localhost:8501` no próprio computador. O fluxo de vídeo usa um servidor HTTP local, em uma porta escolhida automaticamente. Use **Parar** antes de fechar a página.
 
 Com `USAR_VIDEO = True`, informe o caminho do arquivo na interface. Caminhos relativos partem da raiz do projeto. O vídeo inicia pausado; use **Continuar vídeo / Pausar vídeo** para escolher um fundo vazio. No fim, use **Parar** e **Acessar Fonte** para reiniciar. O vídeo precisa ser compatível com a ROI configurada.
 
