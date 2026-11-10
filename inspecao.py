@@ -1,10 +1,11 @@
 """Etapas da inspeção: detectar presença, classificar a peça e enviar o comando."""
 
 from pathlib import Path
+from time import monotonic, sleep
 
 import cv2
 import numpy as np
-import requests
+import paho.mqtt.client as mqtt
 from ultralytics import YOLO
 
 # DETECTAR: ajuste a sensibilidade da comparação com o fundo vazio
@@ -16,13 +17,18 @@ ARQUIVO_MODELO = Path(__file__).with_name("best.pt")
 TAMANHO_IMAGEM = 224
 DISPOSITIVO = "cpu"
 
-# ENVIAR: conexão HTTP com o Node-RED; preencher com os dados reais da bancada
-PROTOCOLO = "http"
-IP_NODE_RED = ""  # IP ou nome do computador central
-PORTA_NODE_RED = None  # Porta informada pela equipe da bancada
-ROTA_NODE_RED = ""  # Caminho do endpoint HTTP que recebe o comando
+# ENVIAR: broker MQTT utilizado pelo Node-RED
+IP_NODE_RED = "10.26.92.250"
+PORTA_NODE_RED = 1883
+USUARIO_MQTT = "senai"
+SENHA_MQTT = "senai"
 TEMPO_LIMITE = 3  # Tempo máximo de espera pela resposta, em segundos
-COMANDOS = {}  # "nome_da_classe": mensagem JSON aceita pela automação
+DURACAO_PULSO = 1.0  # Segundos entre o comando 1 e o retorno a 0 no PLC
+# As chaves devem ser iguais aos nomes das classes gravadas no best.pt
+COMANDOS = {
+    "boa": {"topico": "camera/boa", "valor": 1},
+    "ruim": {"topico": "camera/ruim", "valor": 1},
+}
 
 
 def detectar(imagem, fundo):
@@ -65,25 +71,46 @@ def classificar(imagem):
     return resultado.names[indice], float(resultado.probs.top1conf)
 
 
+def aguardar_mqtt(cliente, pronto):
+    """Processa a conexão até concluir uma etapa, respeitando o tempo limite."""
+    limite = monotonic() + TEMPO_LIMITE
+    while not pronto():
+        restante = limite - monotonic()
+        if restante <= 0:
+            raise TimeoutError("Tempo limite ao enviar o comando MQTT.")
+        codigo = cliente.loop(timeout=min(0.1, restante))
+        if codigo != mqtt.MQTT_ERR_SUCCESS:
+            raise ConnectionError(
+                "Falha na conexão MQTT. Confira usuário, senha e acesso ao broker. "
+                + mqtt.error_string(codigo)
+            )
+
+
 def enviar(classe, destino):
     """Recebe a classe identificada e o destino definido pelas opções de app.py.
 
-    Em "Simulação", apenas retorna a mensagem. Em "Node-RED", envia o
-    comando por HTTP usando as configurações acima e retorna o comando.
+    Em "Simulação", apenas retorna a mensagem. Em "Node-RED", publica o
+    valor no tópico MQTT configurado, espera DURACAO_PULSO e publica 0.
     """
-    # Esta mensagem é apenas demonstrativa enquanto o contrato real é desconhecido
     comando = COMANDOS.get(classe, {"classe": classe})
     if destino == "Node-RED":
-        if (
-            not IP_NODE_RED
-            or PORTA_NODE_RED is None
-            or not ROTA_NODE_RED
-            or classe not in COMANDOS
-        ):
+        if classe not in COMANDOS:
             raise ValueError(
-                "Configure IP_NODE_RED, PORTA_NODE_RED, ROTA_NODE_RED e COMANDOS em inspecao.py!"
+                f"Classe '{classe}' sem comando MQTT. Configure COMANDOS em inspecao.py!"
             )
-        endpoint = f"{PROTOCOLO}://{IP_NODE_RED}:{PORTA_NODE_RED}/{ROTA_NODE_RED.lstrip('/')}"
-        resposta = requests.post(endpoint, json=comando, timeout=TEMPO_LIMITE)
-        resposta.raise_for_status()
+        cliente = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, reconnect_on_failure=False)
+        cliente.username_pw_set(USUARIO_MQTT, SENHA_MQTT)
+        cliente.connect_timeout = TEMPO_LIMITE
+        try:
+            cliente.connect(IP_NODE_RED, PORTA_NODE_RED)
+            aguardar_mqtt(cliente, cliente.is_connected)
+            envio = cliente.publish(comando["topico"], comando["valor"], qos=0, retain=False)
+            aguardar_mqtt(cliente, envio.is_published)
+            sleep(DURACAO_PULSO)
+            envio = cliente.publish(comando["topico"], 0, qos=0, retain=False)
+            aguardar_mqtt(cliente, envio.is_published)
+        finally:
+            cliente.disconnect()
+    if classe in COMANDOS:
+        return {**comando, "reinicio": 0, "duracao_pulso": DURACAO_PULSO}
     return comando

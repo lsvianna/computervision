@@ -17,7 +17,7 @@ INTERVALO_CAMERA = 0.1  # Intervalo da detecção de presença, em segundos
 
 # OPERAÇÃO: estas opções não aparecem na interface
 USAR_VIDEO = False  # True: arquivo de vídeo; False: câmera
-ENVIAR_NODE_RED = False  # Vídeo sempre utiliza simulação
+ENVIAR_NODE_RED = True  # Vídeo sempre utiliza simulação
 PORTA_APP = 5000  # Abra http://localhost:5000 no navegador
 
 # Configure antes de importar o OpenCV; no Windows, ajuste também o runtime C
@@ -27,7 +27,6 @@ if os.name == "nt":
     ctypes.CDLL("msvcrt")._putenv(f"OPENCV_FFMPEG_CAPTURE_OPTIONS={opcoes_rtsp}".encode())
 
 import cv2
-import requests
 from flask import Flask, Response, jsonify, render_template_string, request
 
 from inspecao import classificar, detectar, enviar
@@ -179,7 +178,7 @@ def classificar_quadro(recorte, fonte, fundo):
                 "Comando simulado." if DESTINO == "Simulação"
                 else "Comando enviado ao Node-RED."
             )
-    except (OSError, ValueError, RuntimeError, requests.RequestException) as erro:
+    except (OSError, ValueError, RuntimeError) as erro:
         with controle:
             if estado["fonte"] is fonte and estado["fundo"] is fundo:
                 estado["mensagem"] = f"Falha na inspeção: {erro}"

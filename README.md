@@ -49,9 +49,29 @@ No início de `inspecao.py`, as configurações estão agrupadas por ação:
 
 - **DETECTAR:** diferença mínima entre pixels e proporção de alteração para indicar presença.
 - **CLASSIFICAR:** arquivo de pesos, tamanho de entrada e dispositivo (`cpu` ou GPU).
-- **ENVIAR:** protocolo HTTP, IP, porta, rota, tempo limite e mapeamento `COMANDOS` por classe.
+- **ENVIAR:** IP e porta do broker MQTT, usuário, senha, tempo limite e mapeamento `COMANDOS` por classe.
 
-`classificar()` carrega o YOLO na primeira chamada e reutiliza o modelo. Reinicie a aplicação ao substituir os pesos. `enviar()` retorna o comando na simulação; no envio real, exige conexão configurada e classe mapeada, e faz um POST com JSON.
+`classificar()` carrega o YOLO na primeira chamada e reutiliza o modelo. Reinicie a aplicação ao substituir os pesos. `enviar()` retorna a descrição do pulso na simulação; no envio real, exige uma classe mapeada, publica `1` no tópico correspondente, espera 1 segundo e publica `0` no mesmo tópico para reiniciar o estado do PLC. A duração é configurada em `DURACAO_PULSO`, em `inspecao.py`.
+
+### Conexão com o Node-RED
+
+O aplicativo usa o broker MQTT em `10.26.92.250:1883`, com usuário e senha configurados no início de `inspecao.py`. O envio real está habilitado por `ENVIAR_NODE_RED = True` em `app.py`; para testar apenas a classificação, use `False`.
+
+| Classe no YOLO | Tópico MQTT | Sequência enviada |
+|---|---|---|
+| `boa` | `camera/boa` | `1` → espera 1 s → `0` |
+| `ruim` | `camera/ruim` | `1` → espera 1 s → `0` |
+
+Os nomes das classes vêm das pastas do dataset, por exemplo `train/boa`, `train/ruim`, `val/boa` e `val/ruim`. Se o `best.pt` já usa outros nomes, altere somente as chaves de `COMANDOS` para esses nomes, mantendo os tópicos. Classes sem mapeamento geram um erro e não enviam comandos.
+
+No Node-RED, configure dois nós **mqtt in**, um para cada tópico, usando o mesmo broker e as credenciais fornecidas. Ligue-os inicialmente a nós **debug** para conferir o conteúdo de `msg.payload`. Os valores publicados são os textos `1` e `0`, com QoS 0 e sem retenção. Se o fluxo precisa de um número, use `msg.payload = Number(msg.payload); return msg;` em um nó **function** antes da lógica da bancada.
+
+Depois de atualizar o código, instale a dependência MQTT e reinicie a aplicação:
+
+```powershell
+python -m pip install -r requirements.txt
+python app.py
+```
 
 ## Usar a interface
 
