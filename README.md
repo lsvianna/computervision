@@ -20,8 +20,10 @@ Com seu ambiente virtual ativado, na raiz do projeto:
 
 ```powershell
 python -m pip install -r requirements.txt
-python -m streamlit run app.py
+python app.py
 ```
+
+Abra `http://localhost:5000` no navegador.
 
 Copie os pesos treinados para `best.pt`, na raiz. A captura e a calibração funcionam sem esses pesos; a classificação precisa deles.
 
@@ -68,21 +70,3 @@ Com a câmera, `camera.py` lê continuamente e guarda apenas o quadro mais recen
 Abra pelo endereço `http://localhost:8501` no próprio computador. O fluxo de vídeo usa um servidor HTTP local, em uma porta escolhida automaticamente. Use **Parar** antes de fechar a página.
 
 Com `USAR_VIDEO = True`, informe o caminho do arquivo na interface. Caminhos relativos partem da raiz do projeto. O vídeo inicia pausado; use **Continuar vídeo / Pausar vídeo** para escolher um fundo vazio. No fim, use **Parar** e **Acessar Fonte** para reiniciar. O vídeo precisa ser compatível com a ROI configurada.
-
-## Ferramentas independentes
-
-Para selecionar a ROI:
-
-```powershell
-python calibracao/calibrar_roi.py
-```
-
-Informe o RTSP, pressione **Espaço**, selecione a região e confirme com **Enter**. **C** cancela a seleção e **Esc** encerra a visualização. Prefira uma ROI quadrada e copie a linha impressa para `app.py`. Calibre novamente o fundo ao alterar o enquadramento.
-
-Para testar a imagem completa, pare a captura principal e execute:
-
-```powershell
-python -m streamlit run camera_teste.py --server.port 8502
-```
-
-As configurações ficam no próprio arquivo. A captura é contínua em segundo plano; a tela mostra uma prévia do quadro mais recente, sem recorte ou classificação. Use **Parar** antes de fechar.

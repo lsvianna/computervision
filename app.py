@@ -60,10 +60,10 @@ class Fonte:
             ])
         try:
             if not self.captura.isOpened():
-                raise ValueError("Não foi possível abrir a fonte. Confira a configuração.")
+                raise ValueError("Não foi possível abrir a fonte! Confira a configuração.")
             ok, imagem = self.captura.read()
             if not ok:
-                raise ValueError("Não foi possível ler o primeiro quadro da fonte.")
+                raise ValueError("Não foi possível ler o primeiro quadro da fonte!")
             self.publicar(imagem)
             fps = self.captura.get(cv2.CAP_PROP_FPS)
             self.intervalo = 1 / fps if 0 < fps <= 240 else 1 / 25
@@ -88,7 +88,7 @@ class Fonte:
                                      max(1, int(altura * escala))))
         ok, arquivo = cv2.imencode(".jpg", previa, [cv2.IMWRITE_JPEG_QUALITY, 80])
         if not ok:
-            raise ValueError("Não foi possível preparar a prévia da imagem.")
+            raise ValueError("Não foi possível preparar a prévia da imagem!")
         with self.condicao:
             self.recorte = recorte
             self.jpeg = arquivo.tobytes()
@@ -301,7 +301,7 @@ async function atualizar() {
         const resposta = await fetch('/estado', {cache:'no-store'});
         if (!ocupado) mostrar(await resposta.json());
     } catch (erro) {
-        texto('mensagem', 'Não foi possível consultar o aplicativo. Confira se o servidor está aberto.');
+        texto('mensagem', 'Não foi possível consultar o aplicativo! Confira se o servidor está aberto.');
     } finally {
         setTimeout(atualizar, 300);
     }
@@ -326,7 +326,7 @@ async function acao(nome) {
             const resposta = await fetch('/estado', {cache:'no-store'});
             mostrar(await resposta.json());
         } catch (erro) {
-            texto('mensagem', 'Não foi possível consultar o aplicativo. Confira o servidor.');
+            texto('mensagem', 'Não foi possível consultar o aplicativo! Confira o servidor.');
         }
     }
 }
